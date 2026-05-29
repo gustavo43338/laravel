@@ -17,17 +17,10 @@ class ChatMessage implements ShouldBroadcast
     public $id;
     public $created_at;
 
-    public function __construct($usuario, $mensaje)
+    public function __construct(Mensaje $msg)
     {
-        $this->usuario = $usuario;
-        $this->mensaje = $mensaje;
-        
-       
-        $msg = Mensaje::create([
-            'usuario' => $usuario,
-            'mensaje' => $mensaje
-        ]);
-        
+        $this->usuario = $msg->usuario;
+        $this->mensaje = $msg->mensaje;
         $this->id = $msg->id;
         $this->created_at = $msg->created_at;
     }
