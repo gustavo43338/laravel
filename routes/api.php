@@ -20,25 +20,25 @@ Route::get('/mensajes', function () {
 });
 
 Route::post('/login', function (Request $request) {
+    $validated = $request->validate([
+        'correo' => 'required|email',
+        'password' => 'required|string',
+    ]);
 
-    $usuario = Usuario::where(
-        'correo',
-        $request->correo
-    )->where(
-        'password',
-        $request->password
-    )->first();
+    $usuario = Usuario::where('correo', $validated['correo'])
+        ->where('password', $validated['password'])
+        ->first();
 
     if (!$usuario) {
-
         return response()->json([
-            'ok' => false
+            'ok' => false,
+            'error' => 'Credenciales incorrectas',
         ], 401);
     }
 
     return response()->json([
         'ok' => true,
-        'usuario' => $usuario
+        'usuario' => $usuario,
     ]);
 });
 
@@ -57,7 +57,7 @@ Route::post('/mensaje', function (Request $request) {
 
     event(new ChatMessage($msg));
 
-    // Notificación tipo "mensaje" para todos menos el remitente
+    
     $usuarios = Usuario::where('correo', '!=', $request->usuario)->get();
     foreach ($usuarios as $usuario) {
         $notificacion = Notificacion::create([

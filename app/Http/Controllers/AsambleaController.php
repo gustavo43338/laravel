@@ -23,18 +23,14 @@ class AsambleaController extends Controller
         }
     }
 
-    /**
-     * Listar todas las asambleas
-     */
+    
     public function index()
     {
         $asambleas = Asamblea::orderBy('fecha', 'desc')->get();
         return response()->json($asambleas);
     }
 
-    /**
-     * Crear una nueva asamblea
-     */
+   
     public function store(Request $request)
     {
         $this->assertAdmin($request);
@@ -50,7 +46,7 @@ class AsambleaController extends Controller
 
         $asamblea = Asamblea::create($validated);
 
-        // Notificar a todos los usuarios
+      
         $usuariosIds = \DB::table('usuarios')->pluck('id');
         foreach ($usuariosIds as $usuarioId) {
             Notificacion::create([
@@ -62,7 +58,7 @@ class AsambleaController extends Controller
             ]);
         }
 
-        // Disparar evento
+      
         event(new AsambleyaNueva($asamblea));
 
         return response()->json([
@@ -85,9 +81,7 @@ class AsambleaController extends Controller
         return response()->json($asamblea);
     }
 
-    /**
-     * Actualizar una asamblea
-     */
+    
     public function update(Request $request, $id)
     {
         $asamblea = Asamblea::find($id);

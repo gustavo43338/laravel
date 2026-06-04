@@ -23,9 +23,7 @@ class MultaController extends Controller
         }
     }
 
-    /**
-     * Listar multas de un usuario
-     */
+    
     public function index($usuarioId)
     {
         $multas = Multa::where('usuario_id', $usuarioId)

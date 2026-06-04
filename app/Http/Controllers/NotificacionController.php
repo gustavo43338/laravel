@@ -8,9 +8,7 @@ use Illuminate\Http\Request;
 
 class NotificacionController extends Controller
 {
-    /**
-     * Obtener todas las notificaciones del usuario autenticado
-     */
+    
     public function index(Request $request)
     {
         $usuarioId = $request->input('usuario_id');
@@ -38,9 +36,7 @@ class NotificacionController extends Controller
         return response()->json($notificaciones);
     }
 
-    /**
-     * Obtener notificaciones no leidas
-     */
+   
     public function noLeidas(Request $request)
     {
         $usuarioId = $request->input('usuario_id');
@@ -60,9 +56,7 @@ class NotificacionController extends Controller
         ]);
     }
 
-    /**
-     * Marcar notificación como leida
-     */
+    
     public function marcarComoLeida($id)
     {
         $notificacion = Notificacion::find($id);
@@ -82,9 +76,7 @@ class NotificacionController extends Controller
         ]);
     }
 
-    /**
-     * Marcar todas como leidas
-     */
+    
     public function marcarTodasComoLeidas(Request $request)
     {
         $usuarioId = $request->input('usuario_id');
@@ -103,9 +95,7 @@ class NotificacionController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    /**
-     * Obtener detalles de una notificación
-     */
+    
     public function show($id)
     {
         $notificacion = Notificacion::find($id);

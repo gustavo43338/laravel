@@ -23,9 +23,7 @@ class PagoAtrasadoController extends Controller
         }
     }
 
-    /**
-     * Listar pagos atrasados de un usuario
-     */
+    
     public function index($usuarioId)
     {
         $pagos = PagoAtrasado::where('usuario_id', $usuarioId)
@@ -35,9 +33,7 @@ class PagoAtrasadoController extends Controller
         return response()->json($pagos);
     }
 
-    /**
-     * Crear un nuevo pago atrasado
-     */
+   
     public function store(Request $request)
     {
         $this->assertAdmin($request);
@@ -53,7 +49,7 @@ class PagoAtrasadoController extends Controller
 
         $pagoAtrasado = PagoAtrasado::create($validated);
 
-        // Crear notificación
+       
         $notificacion = Notificacion::create([
             'usuario_id' => $pagoAtrasado->usuario_id,
             'tipo' => 'pago_atrasado',
@@ -62,7 +58,7 @@ class PagoAtrasadoController extends Controller
             'descripcion' => "{$pagoAtrasado->concepto} - {$pagoAtrasado->dias_atraso} días de atraso"
         ]);
 
-        // Disparar evento
+        
         event(new PagoAtrasadoNuevo($pagoAtrasado));
 
         return response()->json([
@@ -72,9 +68,7 @@ class PagoAtrasadoController extends Controller
         ], 201);
     }
 
-    /**
-     * Obtener detalles de un pago atrasado
-     */
+    
     public function show($id)
     {
         $pago = PagoAtrasado::find($id);

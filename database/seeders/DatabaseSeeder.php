@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Crear usuarios de prueba
+       
         $usuario1 = Usuario::create([
             'nombre' => 'Juan García',
             'correo' => 'juan@gmail.com',
@@ -43,7 +43,7 @@ class DatabaseSeeder extends Seeder
             'rol' => 'admin'
         ]);
 
-        // Crear multas
+       
         $multa1 = Multa::create([
             'usuario_id' => $usuario1->id,
             'descripcion' => 'Ruido excesivo después de las 22:00',
@@ -62,7 +62,7 @@ class DatabaseSeeder extends Seeder
             'fecha_vencimiento' => Carbon::now()->addDays(15)
         ]);
 
-        // Crear asambleas
+       
         $asamblea1 = Asamblea::create([
             'titulo' => 'Asamblea General Extraordinaria',
             'descripcion' => 'Se tratarán temas importantes del condominio',
@@ -81,7 +81,7 @@ class DatabaseSeeder extends Seeder
             'estado' => 'programada'
         ]);
 
-        // Crear pagos atrasados
+       
         $pago1 = PagoAtrasado::create([
             'usuario_id' => $usuario1->id,
             'concepto' => 'Cuota de mantenimiento Abril',
@@ -100,7 +100,7 @@ class DatabaseSeeder extends Seeder
             'detalles' => 'Pago vencido desde el 22 de mayo'
         ]);
 
-        // Crear notificaciones
+       
         Notificacion::create([
             'usuario_id' => $usuario1->id,
             'tipo' => 'multa',
