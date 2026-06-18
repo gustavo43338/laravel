@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Usuario;
 use App\Models\Multa;
 use App\Models\Asamblea;
@@ -10,47 +9,46 @@ use App\Models\PagoAtrasado;
 use App\Models\Notificacion;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
     use WithoutModelEvents;
 
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-       
         $usuario1 = Usuario::create([
             'nombre' => 'Juan García',
             'correo' => 'juan@gmail.com',
-            'password' => '123',
-            'rol' => 'usuario'
+            'password' => Hash::make('123'),
+            'rol' => 'usuario',
+            'email_verified_at' => now(),
         ]);
 
         $usuario2 = Usuario::create([
             'nombre' => 'María López',
             'correo' => 'maria@gmail.com',
-            'password' => '123',
-            'rol' => 'usuario'
+            'password' => Hash::make('123'),
+            'rol' => 'usuario',
+            'email_verified_at' => now(),
         ]);
 
-        $admin = Usuario::create([
+        Usuario::create([
             'nombre' => 'Administrador',
             'correo' => 'admin@gmail.com',
-            'password' => '123',
-            'rol' => 'admin'
+            'password' => Hash::make('123'),
+            'rol' => 'admin',
+            'email_verified_at' => now(),
         ]);
 
-       
         $multa1 = Multa::create([
             'usuario_id' => $usuario1->id,
             'descripcion' => 'Ruido excesivo después de las 22:00',
             'monto' => 50.00,
             'estado' => 'pendiente',
             'detalles' => 'Violación del reglamento de convivencia',
-            'fecha_vencimiento' => Carbon::now()->addDays(10)
+            'fecha_vencimiento' => Carbon::now()->addDays(10),
         ]);
 
         $multa2 = Multa::create([
@@ -59,36 +57,34 @@ class DatabaseSeeder extends Seeder
             'monto' => 75.00,
             'estado' => 'pendiente',
             'detalles' => 'Parqueo en zona no permitida',
-            'fecha_vencimiento' => Carbon::now()->addDays(15)
+            'fecha_vencimiento' => Carbon::now()->addDays(15),
         ]);
 
-       
         $asamblea1 = Asamblea::create([
             'titulo' => 'Asamblea General Extraordinaria',
             'descripcion' => 'Se tratarán temas importantes del condominio',
             'fecha' => Carbon::now()->addDays(7)->setHour(18)->setMinute(0),
             'lugar' => 'Salón de eventos',
             'agenda' => 'Revisión presupuesto 2026, Reforma reglamento',
-            'estado' => 'programada'
+            'estado' => 'programada',
         ]);
 
-        $asamblea2 = Asamblea::create([
+        Asamblea::create([
             'titulo' => 'Asamblea Ordinaria Mensual',
             'descripcion' => 'Discusión de asuntos mensuales',
             'fecha' => Carbon::now()->addDays(14)->setHour(19)->setMinute(0),
             'lugar' => 'Salón de eventos',
             'agenda' => 'Informes de administración',
-            'estado' => 'programada'
+            'estado' => 'programada',
         ]);
 
-       
         $pago1 = PagoAtrasado::create([
             'usuario_id' => $usuario1->id,
             'concepto' => 'Cuota de mantenimiento Abril',
             'monto' => 250.00,
             'fecha_vencimiento' => Carbon::now()->subDays(15),
             'dias_atraso' => 15,
-            'detalles' => 'Pago vencido desde el 15 de abril'
+            'detalles' => 'Pago vencido desde el 15 de abril',
         ]);
 
         $pago2 = PagoAtrasado::create([
@@ -97,17 +93,16 @@ class DatabaseSeeder extends Seeder
             'monto' => 250.00,
             'fecha_vencimiento' => Carbon::now()->subDays(5),
             'dias_atraso' => 5,
-            'detalles' => 'Pago vencido desde el 22 de mayo'
+            'detalles' => 'Pago vencido desde el 22 de mayo',
         ]);
 
-       
         Notificacion::create([
             'usuario_id' => $usuario1->id,
             'tipo' => 'multa',
             'referencia_id' => $multa1->id,
             'titulo' => 'Nueva Multa Registrada',
             'descripcion' => 'Ha recibido una multa de $50.00',
-            'leida' => false
+            'leida' => false,
         ]);
 
         Notificacion::create([
@@ -116,7 +111,7 @@ class DatabaseSeeder extends Seeder
             'referencia_id' => $multa2->id,
             'titulo' => 'Nueva Multa Registrada',
             'descripcion' => 'Ha recibido una multa de $75.00',
-            'leida' => false
+            'leida' => false,
         ]);
 
         Notificacion::create([
@@ -125,7 +120,7 @@ class DatabaseSeeder extends Seeder
             'referencia_id' => $asamblea1->id,
             'titulo' => 'Nueva Asamblea Programada',
             'descripcion' => 'Asamblea General Extraordinaria - ' . $asamblea1->fecha->format('d/m/Y H:i'),
-            'leida' => false
+            'leida' => false,
         ]);
 
         Notificacion::create([
@@ -134,7 +129,7 @@ class DatabaseSeeder extends Seeder
             'referencia_id' => $asamblea1->id,
             'titulo' => 'Nueva Asamblea Programada',
             'descripcion' => 'Asamblea General Extraordinaria - ' . $asamblea1->fecha->format('d/m/Y H:i'),
-            'leida' => false
+            'leida' => false,
         ]);
 
         Notificacion::create([
@@ -143,7 +138,7 @@ class DatabaseSeeder extends Seeder
             'referencia_id' => $pago1->id,
             'titulo' => 'Pago Atrasado',
             'descripcion' => 'Cuota de mantenimiento Abril - 15 días de atraso',
-            'leida' => false
+            'leida' => false,
         ]);
 
         Notificacion::create([
@@ -152,7 +147,7 @@ class DatabaseSeeder extends Seeder
             'referencia_id' => $pago2->id,
             'titulo' => 'Pago Atrasado',
             'descripcion' => 'Cuota de mantenimiento Mayo - 5 días de atraso',
-            'leida' => false
+            'leida' => false,
         ]);
     }
 }

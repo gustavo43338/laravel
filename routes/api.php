@@ -1,110 +1,109 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Events\ChatMessage;
+use App\Events\NotificacionNueva;
 use App\Models\Mensaje;
-use App\Models\Usuario;
 use App\Models\Notificacion;
+use App\Models\Usuario;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\MultaController;
 use App\Http\Controllers\AsambleaController;
 use App\Http\Controllers\PagoAtrasadoController;
-use App\Events\NotificacionNueva;
 
+// ── Público ──
+Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/mensajes', function () {
-    return response()->json(
-        Mensaje::orderBy('created_at', 'asc')->get()
-    );
-});
+// ── Autenticado (token Sanctum) ──
+Route::middleware('auth:sanctum')->group(function () {
 
-Route::post('/login', function (Request $request) {
-    $validated = $request->validate([
-        'correo' => 'required|email',
-        'password' => 'required|string',
-    ]);
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/me', [AuthController::class, 'me']);
+    Route::post('/email/resend', [AuthController::class, 'resendVerification']);
 
-    $usuario = Usuario::where('correo', $validated['correo'])
-        ->where('password', $validated['password'])
-        ->first();
+    // ── Requiere correo verificado ──
+    Route::middleware('verified.correo')->group(function () {
 
-    if (!$usuario) {
-        return response()->json([
-            'ok' => false,
-            'error' => 'Credenciales incorrectas',
-        ], 401);
-    }
+        Route::get('/mensajes', function () {
+            return response()->json(
+                Mensaje::orderBy('created_at', 'asc')->get()
+            );
+        });
 
-    return response()->json([
-        'ok' => true,
-        'usuario' => $usuario,
-    ]);
-});
+        Route::post('/mensaje', function (\Illuminate\Http\Request $request) {
+            $usuario = $request->user();
 
-Route::get('/usuarios', function () {
-    return response()->json(
-        Usuario::orderBy('id', 'asc')->get()
-    );
-});
+            $validated = $request->validate([
+                'mensaje' => 'required|string|max:2000',
+            ]);
 
-Route::post('/mensaje', function (Request $request) {
+            $msg = Mensaje::create([
+                'usuario' => $usuario->correo,
+                'mensaje' => $validated['mensaje'],
+            ]);
 
-    $msg = Mensaje::create([
-        'usuario' => $request->usuario,
-        'mensaje' => $request->mensaje,
-    ]);
+            event(new ChatMessage($msg));
 
-    event(new ChatMessage($msg));
+            $otros = Usuario::where('id', '!=', $usuario->id)->get();
+            foreach ($otros as $dest) {
+                $notificacion = Notificacion::create([
+                    'usuario_id' => $dest->id,
+                    'tipo' => 'mensaje',
+                    'referencia_id' => $msg->id,
+                    'titulo' => 'Nuevo mensaje',
+                    'descripcion' => 'De ' . $usuario->correo . ': ' . $validated['mensaje'],
+                    'leida' => false,
+                ]);
+                event(new NotificacionNueva($notificacion));
+            }
 
-    
-    $usuarios = Usuario::where('correo', '!=', $request->usuario)->get();
-    foreach ($usuarios as $usuario) {
-        $notificacion = Notificacion::create([
-            'usuario_id' => $usuario->id,
-            'tipo' => 'mensaje',
-            'referencia_id' => $msg->id,
-            'titulo' => 'Nuevo mensaje',
-            'descripcion' => 'De ' . $request->usuario . ': ' . $request->mensaje,
-            'leida' => false,
-        ]);
+            return response()->json(['ok' => true]);
+        });
 
-        event(new NotificacionNueva($notificacion));
-    }
+        Route::prefix('notificaciones')->group(function () {
+            Route::get('/', [NotificacionController::class, 'index']);
+            Route::get('/no-leidas', [NotificacionController::class, 'noLeidas']);
+            Route::put('/marcar-todas-leidas', [NotificacionController::class, 'marcarTodasComoLeidas']);
+            Route::get('/{id}', [NotificacionController::class, 'show']);
+            Route::put('/{id}/leida', [NotificacionController::class, 'marcarComoLeida']);
+        });
 
-    return response()->json([
-        'ok' => true
-    ]);
-});
+        Route::prefix('multas')->group(function () {
+            Route::get('/usuario/{usuarioId}', [MultaController::class, 'index']);
+            Route::get('/detalle/{id}', [MultaController::class, 'show']);
+            Route::middleware('admin')->group(function () {
+                Route::post('/', [MultaController::class, 'store']);
+                Route::put('/detalle/{id}', [MultaController::class, 'update']);
+            });
+        });
 
+        Route::prefix('asambleas')->group(function () {
+            Route::get('/', [AsambleaController::class, 'index']);
+            Route::get('/{id}', [AsambleaController::class, 'show']);
+            Route::middleware('admin')->group(function () {
+                Route::post('/', [AsambleaController::class, 'store']);
+                Route::put('/{id}', [AsambleaController::class, 'update']);
+            });
+        });
 
-Route::prefix('notificaciones')->group(function () {
-    Route::get('/', [NotificacionController::class, 'index']);
-    Route::get('/no-leidas', [NotificacionController::class, 'noLeidas']);
-    Route::get('/{id}', [NotificacionController::class, 'show']);
-    Route::put('/{id}/leida', [NotificacionController::class, 'marcarComoLeida']);
-    Route::put('/marcar-todas-leidas', [NotificacionController::class, 'marcarTodasComoLeidas']);
-});
+        Route::prefix('pagos-atrasados')->group(function () {
+            Route::get('/usuario/{usuarioId}', [PagoAtrasadoController::class, 'index']);
+            Route::get('/detalle/{id}', [PagoAtrasadoController::class, 'show']);
+            Route::middleware('admin')->group(function () {
+                Route::post('/', [PagoAtrasadoController::class, 'store']);
+            });
+        });
 
-
-Route::prefix('multas')->group(function () {
-    Route::get('/{usuarioId}', [MultaController::class, 'index']);
-    Route::post('/', [MultaController::class, 'store']);
-    Route::get('/{id}', [MultaController::class, 'show']);
-    Route::put('/{id}', [MultaController::class, 'update']);
-});
-
-
-Route::prefix('asambleas')->group(function () {
-    Route::get('/', [AsambleaController::class, 'index']);
-    Route::post('/', [AsambleaController::class, 'store']);
-    Route::get('/{id}', [AsambleaController::class, 'show']);
-    Route::put('/{id}', [AsambleaController::class, 'update']);
-});
-
-
-Route::prefix('pagos-atrasados')->group(function () {
-    Route::get('/{usuarioId}', [PagoAtrasadoController::class, 'index']);
-    Route::post('/', [PagoAtrasadoController::class, 'store']);
-    Route::get('/{id}', [PagoAtrasadoController::class, 'show']);
+        // CRUD usuarios — solo administrador
+        Route::middleware('admin')->prefix('usuarios')->group(function () {
+            Route::get('/', [UsuarioController::class, 'index']);
+            Route::post('/', [UsuarioController::class, 'store']);
+            Route::get('/{usuario}', [UsuarioController::class, 'show']);
+            Route::put('/{usuario}', [UsuarioController::class, 'update']);
+            Route::delete('/{usuario}', [UsuarioController::class, 'destroy']);
+            Route::post('/{usuario}/reenviar-verificacion', [UsuarioController::class, 'resendVerification']);
+        });
+    });
 });
