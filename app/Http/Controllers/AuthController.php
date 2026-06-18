@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Usuario;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -14,6 +13,7 @@ class AuthController extends Controller
         $validated = $request->validate([
             'correo' => 'required|email',
             'password' => 'required|string',
+            'device_name' => 'sometimes|string|max:255',
         ]);
 
         $usuario = Usuario::where('correo', $validated['correo'])->first();
@@ -34,12 +34,14 @@ class AuthController extends Controller
             ], 403);
         }
 
-        $usuario->tokens()->where('name', 'api-token')->delete();
-        $token = $usuario->createToken('api-token')->plainTextToken;
+        $deviceName = $validated['device_name'] ?? 'api-token';
+        $usuario->tokens()->where('name', $deviceName)->delete();
+        $token = $usuario->createToken($deviceName)->plainTextToken;
 
         return response()->json([
             'ok' => true,
             'token' => $token,
+            'device_name' => $deviceName,
             'usuario' => $usuario,
         ]);
     }
@@ -56,6 +58,33 @@ class AuthController extends Controller
         return response()->json([
             'ok' => true,
             'usuario' => $request->user(),
+        ]);
+    }
+
+    public function changePassword(Request $request)
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|string',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $usuario = $request->user();
+
+        if (!Hash::check($validated['current_password'], $usuario->password)) {
+            return response()->json([
+                'ok' => false,
+                'error' => 'La contraseña actual es incorrecta.',
+            ], 403);
+        }
+
+        $usuario->password = Hash::make($validated['password']);
+        $usuario->save();
+
+        $usuario->tokens()->delete();
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Contraseña actualizada. Se cerraron todas las sesiones del usuario.',
         ]);
     }
 
