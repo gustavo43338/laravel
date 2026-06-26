@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Usuario;
+use App\Models\PasswordResetCode;
+use App\Notifications\RecoveryCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 
 class AuthController extends Controller
 {
@@ -53,6 +56,34 @@ class AuthController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function forgotPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'correo' => 'required|email',
+        ]);
+
+        $correo = $validated['correo'];
+
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+        $expires = Carbon::now()->addMinutes(15);
+
+        PasswordResetCode::create([
+            'correo' => $correo,
+            'code' => $code,
+            'expires_at' => $expires,
+        ]);
+
+        $usuario = Usuario::where('correo', $correo)->first();
+        if ($usuario) {
+            $usuario->notify(new RecoveryCode($code, $expires));
+        }
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Si el correo existe, se envió un código de recuperación (revisa la bandeja).',
+        ]);
+    }
+
     public function me(Request $request)
     {
         return response()->json([
@@ -85,6 +116,49 @@ class AuthController extends Controller
         return response()->json([
             'ok' => true,
             'mensaje' => 'Contraseña actualizada. Se cerraron todas las sesiones del usuario.',
+        ]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $validated = $request->validate([
+            'correo' => 'required|email',
+            'code' => 'required|string|size:6',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $correo = $validated['correo'];
+
+        $entry = PasswordResetCode::where('correo', $correo)
+            ->where('code', $validated['code'])
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$entry || ($entry->expires_at && Carbon::now()->gt($entry->expires_at))) {
+            return response()->json([
+                'ok' => false,
+                'error' => 'Código inválido o expirado.',
+            ], 400);
+        }
+
+        $usuario = Usuario::where('correo', $correo)->first();
+        if (!$usuario) {
+            return response()->json([
+                'ok' => false,
+                'error' => 'Usuario no encontrado.',
+            ], 404);
+        }
+
+        $usuario->password = Hash::make($validated['password']);
+        $usuario->save();
+
+        // remove all tokens and codes
+        $usuario->tokens()->delete();
+        PasswordResetCode::where('correo', $correo)->delete();
+
+        return response()->json([
+            'ok' => true,
+            'mensaje' => 'Contraseña restablecida correctamente. Se cerraron todas las sesiones.',
         ]);
     }
 

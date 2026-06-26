@@ -15,6 +15,8 @@ use App\Http\Controllers\PagoAtrasadoController;
 
 // ── Público ──
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/password/forgot', [AuthController::class, 'forgotPassword']);
+Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 
 // ── Autenticado (token Sanctum) ──
 Route::middleware('auth:sanctum')->group(function () {
