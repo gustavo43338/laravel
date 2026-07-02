@@ -18,8 +18,8 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/password/forgot', [AuthController::class, 'forgotPassword']);
 Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 
-// ── Autenticado (token Sanctum) ──
-Route::middleware('auth:sanctum')->group(function () {
+// ── Autenticado (token Sanctum y sesión activa) ──
+Route::middleware(['auth:sanctum', 'active.session'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::post('/password/change', [AuthController::class, 'changePassword']);

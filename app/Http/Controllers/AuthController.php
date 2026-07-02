@@ -7,6 +7,7 @@ use App\Models\PasswordResetCode;
 use App\Notifications\RecoveryCode;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
 
 class AuthController extends Controller
@@ -80,7 +81,7 @@ class AuthController extends Controller
 
         return response()->json([
             'ok' => true,
-            'mensaje' => 'Si el correo existe, se envió un código de recuperación (revisa la bandeja).',
+            'mensaje' => 'Si el correo existe, se envió un código de recuperación. Revisa tu bandeja de entrada y spam. Si no llega, verifica que escribiste exactamente tu correo registrado.',
         ]);
     }
 

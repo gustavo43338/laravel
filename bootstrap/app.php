@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'verified.correo' => \App\Http\Middleware\EnsureCorreoVerificado::class,
+            'active.session' => \App\Http\Middleware\EnsureSesionActiva::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
